@@ -1,30 +1,30 @@
 
 ## Descripción del proyecto
 
-- **Objetivo**: Diseñar y construir un robot de péndulo invertido que se equilibre por sí mismo mediante control PID.  
-- **Inspiración**: Diseño basado en el robot M0-V de *WALL·E*.  
-- **Componentes principales**:  
-  - Arduino UNO (o compatible) + MPU6050 (acelerómetro/giroscopio) + receptor IR  
-  - 2 servos (pines 9 y 10)  
-  - 2 motores NEMA controlados por puente H (pines ENA/ENB, IN1–IN4)  
-  - Dashboard en Processing para telemetría y control por serie  
+Este proyecto recrea un robot inspirado en el modelo **M0-V** de la película *WALL·E*. Utiliza un controlador PID (pendiente de implementación) para alcanzar el equilibrio del sistema pendular invertido. Controlado mediante Arduino con dashboard en Processing para monitoreo y control en tiempo real.
+
+
+## Características Principales
+- Control de 2 servomotores (ángulo 0-180°)
+- Manejo de 2 motores NEMA mediante puente H
+- Lectura de orientación con MPU6050 (giroscopio/acelerómetro)
+- Dashboard con:
+  - Visualización de ángulos en 3 ejes
+  - Gráficos de aceleración en tiempo real
+  - Control manual de servos y motores
+  - Consola serial integrada
+- Sistema de calibración automática del giroscopio
+- Soporte básico para control infrarrojo
 
 ## Hardware
-
-1. **Microcontrolador**: Arduino UNO o equivalente  
-2. **Sensores**:  
-   - MPU6050  
-   - Receptor IR (pin 2)  
-   - HC-SR04 ultrasonico (pendiente)  
-3. **Actuadores**:  
-   - 2× Servos SG90  
-   - 2× Motores NEMA en puente H  
-4. **Interfaz**:  
-   - Cable USB  
-   - PC con Processing  
-5. **Estructura mecánica**:  
-   - Modelos CAD en `hardware/CAD/`  
-   - Impresión 3D (pendiente)
+| Componente               | Especificaciones                     |
+|--------------------------|--------------------------------------|
+| Microcontrolador         | Arduino Uno/Mega                     |
+| Sensor inercial          | MPU6050 (6 ejes)                     |
+| Motores                  | NEMA 17 + Puente H L298N             |
+| Servomotores             | Standard 9g (180°)                   |
+| Comunicación             | Serial USB + Receptor IR (RAW)       |
+| Alimentación             | Batería LiPo 12V + Regulador 5V      |
 
 ## Software
 
@@ -36,12 +36,12 @@
   - `M,vel,tiempo,motor\n` → controla motores  
 - Lectura de IR y muestra código bruto  
 - Envía telemetría periódica:
-- Funciones de avance y freno seguro
+- Funciones de avance y freno
 
 ### Processing (`processing/DashboardM0V/DashboardM0V.pde`)
 
-- Conexión a puerto serie (115200 bps)  
-- Panel de telemetría: ángulos, aceleraciones, giroscopio  
+- Conexión a puerto serie (115200 bps)
+- Panel de telemetría: ángulos, aceleraciones, giroscopio
 - Gráfico histórico de aceleraciones  
 - Control CP5 para servos y motores  
 - Consola serial integrada  
