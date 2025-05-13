@@ -49,7 +49,7 @@ Este proyecto recrea un robot inspirado en el modelo **M0-V** de la película *W
 
 # ROADMAP
 
-## Corto plazo (1–2 semanas)
+## Corto plazo
 
 - Determinar y mapear **códigos IR** para control remoto  
 - Mejorar y depurar el código Arduino y Processing  
@@ -59,7 +59,7 @@ Este proyecto recrea un robot inspirado en el modelo **M0-V** de la película *W
   - Integrar sensor ultrasónico HC-SR04 y mostrar la línea de distancia al suelo dentro del cubo 3D  
   - Añadir LEDs de estado (calibración, alerta de balance)
 
-## Mediano plazo (1–2 meses)
+## Mediano plazo
 
 - Completar diseño físico del robot en CAD  
 - Impresión 3D de piezas estructurales  
@@ -67,7 +67,7 @@ Este proyecto recrea un robot inspirado en el modelo **M0-V** de la película *W
 - Ajustar geometría y centro de masa para mejorar estabilidad  
 - Montaje completo de todos los componentes en el chasis impreso
 
-## Largo plazo (3–6 meses)
+## Largo plazo
 
 - Implementar controlador **PID** completo en Arduino  
 - Lograr equilibrio automático del robot en posición invertida  
