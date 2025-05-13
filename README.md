@@ -22,13 +22,13 @@ Este proyecto recrea un robot inspirado en el modelo **M0-V** de la película *W
 | Microcontrolador         | Arduino Uno/Mega                     |
 | Sensor inercial          | MPU6050 (6 ejes)                     |
 | Motores                  | NEMA 17 + Puente H L298N             |
-| Servomotores             | Standard 9g (180°)                   |
+| Servomotores             | Sg90 (180°)                          |
 | Comunicación             | Serial USB + Receptor IR (RAW)       |
-| Alimentación             | Batería LiPo 12V + Regulador 5V      |
+| Alimentación             | Batería LiPo 12V                     |
 
 ## Software
 
-### Arduino (`arduino/inverted_pendulum.ino`)
+### Arduino
 
 - Inicializa y calibra MPU6050  
 - Comandos seriales:  
@@ -38,12 +38,12 @@ Este proyecto recrea un robot inspirado en el modelo **M0-V** de la película *W
 - Envía telemetría periódica:
 - Funciones de avance y freno
 
-### Processing (`processing/DashboardM0V/DashboardM0V.pde`)
+### Processing
 
 - Conexión a puerto serie (115200 bps)
 - Panel de telemetría: ángulos, aceleraciones, giroscopio
 - Gráfico histórico de aceleraciones  
-- Control CP5 para servos y motores  
+- Control para servos y motores  
 - Consola serial integrada  
 - Placeholder para futura visualización 3D
 
