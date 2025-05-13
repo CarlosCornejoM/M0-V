@@ -19,7 +19,7 @@ Este proyecto recrea un robot inspirado en el modelo **M0-V** de la película *W
 ## Hardware
 | Componente               | Especificaciones                     |
 |--------------------------|--------------------------------------|
-| Microcontrolador         | Arduino Uno/Mega                     |
+| Microcontrolador         | Arduino Uno/nano/esp8266             |
 | Sensor inercial          | MPU6050 (6 ejes)                     |
 | Motores                  | NEMA 17 + Puente H L298N             |
 | Servomotores             | Sg90 (180°)                          |
