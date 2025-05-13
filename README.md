@@ -51,13 +51,13 @@ Este proyecto recrea un robot inspirado en el modelo **M0-V** de la película *W
 
 ## Corto plazo
 
-- Determinar y mapear **códigos IR** para control remoto  
+- Determinar y mapear **códigos IR** para control remoto
+- Añadir LEDs controlabres por IR  
 - Mejorar y depurar el código Arduino y Processing  
 - Ajustar precisión de calibración y filtrado de sensores  
 - En la dashboard:  
   - Cubo 3D que refleje en tiempo real **pitch/roll/yaw**  
   - Integrar sensor ultrasónico HC-SR04 y mostrar la línea de distancia al suelo dentro del cubo 3D  
-  - Añadir LEDs de estado (calibración, alerta de balance)
 
 ## Mediano plazo
 
