@@ -61,10 +61,9 @@ Este proyecto recrea un robot inspirado en el modelo **M0-V** de la película *W
 
 ## Mediano plazo
 
-- Completar diseño físico del robot en CAD  
+- Completar diseño del robot
 - Impresión 3D de piezas estructurales  
-- Simulación y análisis en ANSYS (momentos de inercia, masa)  
-- Ajustar geometría y centro de masa para mejorar estabilidad  
+- Simulación y análisis en ANSYS, determinacion de momentos de inercia y centro de masa para modelo fisico en PID
 - Montaje completo de todos los componentes en el chasis impreso
 
 ## Largo plazo
