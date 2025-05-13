@@ -3,7 +3,8 @@
 
 Este proyecto recrea un robot inspirado en el modelo **M0-V** de la película *WALL·E*. Utiliza un controlador PID (pendiente de implementación) para alcanzar el equilibrio del sistema pendular invertido. Controlado mediante Arduino con dashboard en Processing para monitoreo y control en tiempo real.
 
-
+![Diseño del Robot](Design/A.png "Diseño del Robot")
+![Diseño del Robot](Design/B.png "Diseño del Robot")
 ## Características Principales
 - Control de 2 servomotores (ángulo 0-180°)
 - Manejo de 2 motores NEMA mediante puente H
@@ -15,6 +16,10 @@ Este proyecto recrea un robot inspirado en el modelo **M0-V** de la película *W
   - Consola serial integrada
 - Sistema de calibración automática del giroscopio
 - Soporte básico para control infrarrojo
+
+  
+![Componentes del Robot](Design/Animation2.gif "Componentes")
+
 
 ## Hardware
 | Componente               | Especificaciones                     |
@@ -39,6 +44,8 @@ Este proyecto recrea un robot inspirado en el modelo **M0-V** de la película *W
 - Funciones de avance y freno
 
 ### Processing
+
+![Dashboard](Design/Animation3.gif "Dashboard")
 
 - Conexión a puerto serie (115200 bps)
 - Panel de telemetría: ángulos, aceleraciones, giroscopio
