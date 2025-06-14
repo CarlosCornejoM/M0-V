@@ -93,6 +93,8 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
     .mapping-table th{background:#333;color:#00ff41}
     .mapping-table select{background:#2a2a3e;color:#fff;border:1px solid #555;border-radius:4px;padding:.2rem;width:100%}
 
+    .servo-indicator{position:absolute;bottom:10px;right:10px;background:rgba(0,255,65,0.2);border:1px solid #00ff41;border-radius:4px;padding:4px 8px;font-size:10px;color:#00ff41;pointer-events:none}
+
     @media (max-width:1024px){
       .grid{grid-template-columns:1fr;gap:.5rem}
       .controller{max-width:350px}
@@ -137,6 +139,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
               <div class="trigger-container"><div class="trigger-label">L2</div><div class="trigger-bar"><div class="trigger-fill" id="trigL"></div></div></div>
               <div class="trigger-container"><div class="trigger-label">R2</div><div class="trigger-bar"><div class="trigger-fill" id="trigR"></div></div></div>
             </div>
+            <div class="servo-indicator">Right Stick → Servos</div>
         </div></div>
       </div>
 
@@ -150,7 +153,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
           <button class="btn-action" onclick="sendCmd('unoOff')">UNO OFF</button>
         </div>
         <div class="section">
-          <h3>Servos</h3>
+          <h3>Servos (Right Stick Auto)</h3>
           <div class="slider-group"><span>S1:</span><input class="slider" id="s1" type="range" min="0" max="180" value="90" oninput="updateServo()"><span id="s1v">90°</span></div>
           <div class="slider-group"><span>S2:</span><input class="slider" id="s2" type="range" min="0" max="180" value="90" oninput="updateServo()"><span id="s2v">90°</span></div>
           <button class="btn-action" onclick="sendServos()">Send Servos</button>
@@ -208,6 +211,11 @@ let lastSent=0, latencies=[], points=[];
 let userIsAdjustingSliders = false;
 let lastUserSliderUpdate = 0;
 
+// NUEVAS VARIABLES PARA CONTROL DE SERVOS
+let lastServoSent = 0;
+const SERVO_SEND_INTERVAL = 50; // Enviar cada 50ms para evitar spam
+let lastServoAngles = {a1: 90, a2: 90}; // Para evitar envios redundantes
+
 document.getElementById('btnTogglePerf').onclick = ()=>{
   const perf = document.getElementById('perfSection');
   const btn = document.getElementById('btnTogglePerf');
@@ -255,6 +263,48 @@ buttonMappings[1] = {action:'espOff',type:'onPress'};
 let prevButtonState = Array(16).fill(false);
 let state={lx:0,ly:0,rx:0,ry:0,tl:0,tr:0,btn:Array(16).fill(false)};
 
+// NUEVA FUNCIÓN: Mapear valores del stick (-1 a 1) a ángulos de servo (0 a 180)
+function mapStickToServo(stickValue) {
+  // Convierte de rango -1,1 a 0,180
+  return Math.round(((stickValue + 1) / 2) * 180);
+}
+
+// NUEVA FUNCIÓN: Enviar comandos de servo basado en stick derecho
+function updateServosFromStick() {
+  const now = Date.now();
+  
+  // Throttle: solo enviar cada SERVO_SEND_INTERVAL ms
+  if (now - lastServoSent < SERVO_SEND_INTERVAL) return;
+  
+  // Calcular ángulos basados en stick derecho
+  const servo1Angle = mapStickToServo(state.rx); // Horizontal (izq-der)
+  const servo2Angle = mapStickToServo(-state.ry); // Vertical (arriba-abajo, invertido)
+  
+  // Solo enviar si los ángulos han cambiado significativamente (más de 2 grados)
+  if (Math.abs(servo1Angle - lastServoAngles.a1) > 2 || 
+      Math.abs(servo2Angle - lastServoAngles.a2) > 2) {
+    
+    // Actualizar sliders visuales sin disparar eventos de usuario
+    userIsAdjustingSliders = false; // Permitir actualización programática
+    document.getElementById('s1').value = servo1Angle;
+    document.getElementById('s2').value = servo2Angle;
+    document.getElementById('s1v').textContent = servo1Angle + '°';
+    document.getElementById('s2v').textContent = servo2Angle + '°';
+    
+    // Enviar comando al ESP8266
+    ws.send(JSON.stringify({
+      cmd: 'setServos',
+      a1: servo1Angle,
+      a2: servo2Angle
+    }));
+    
+    lastServoSent = now;
+    lastServoAngles = {a1: servo1Angle, a2: servo2Angle};
+    
+    console.log(`Servos: S1=${servo1Angle}°, S2=${servo2Angle}° (RX=${state.rx.toFixed(2)}, RY=${state.ry.toFixed(2)})`);
+  }
+}
+
 function createMappingTable(){
   const tbody = document.querySelector('#mappingTable tbody');
   tbody.innerHTML='';
@@ -285,11 +335,13 @@ function updateGamepadList(){
   });
 }
 
+// FUNCIÓN MODIFICADA: pollGamepad con control de servos
 function pollGamepad(){
   const idx = parseInt(document.getElementById('gpSelect').value);
   if(isNaN(idx)) return;
   const g = navigator.getGamepads()[idx];
   if(!g) return;
+  
   g.buttons.forEach((b,i)=>{
     if(i<16){
       const pressed = b.pressed;
@@ -308,10 +360,14 @@ function pollGamepad(){
       state.btn[i] = pressed;
     }
   });
+  
   state.lx = g.axes[0]||0; state.ly = g.axes[1]||0;
   state.rx = g.axes[2]||0; state.ry = g.axes[3]||0;
   state.tl = g.buttons[6]?.value||0; state.tr = g.buttons[7]?.value||0;
   updateVisuals(); 
+  
+  // NUEVA LÍNEA: Actualizar servos basado en stick derecho
+  updateServosFromStick();
   
   ws.send(JSON.stringify({cmd:'gamepad',...state}));
 }
