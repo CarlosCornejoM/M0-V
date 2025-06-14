@@ -1,0 +1,6 @@
+robot controller
+SERVO_X    = slider x      0   ; moverás servo1Angle
+SERVO_Y    = slider y      0   ; moverás servo2Angle
+MOTOR_PWR  = slider ry     0   ; controla motorVelocity
+BTN_M1     = button 4          ; activa motor 1
+BTN_M2     = button 5          ; activa motor 2

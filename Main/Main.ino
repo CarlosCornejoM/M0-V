@@ -1,17 +1,22 @@
 #include <Wire.h>
 #include <Servo.h>
+#include <AccelStepper.h>
 
 void setup() {
   initParams();
   initCOM();
-  initIR();
+  initHCSR04();
   initMotors();
+  //initSteppers();
   initMPU();
+  
 }
 
 void loop() {
   handleCOM();
-  handleIR();
+  //stepper();
+  handleHCSR04();
   updateMPU();
-  delay(10);
+  //actualizarMotors();  // ver despues el orden para PID
+  
 }

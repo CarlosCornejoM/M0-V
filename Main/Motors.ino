@@ -1,6 +1,50 @@
-extern const int enA, enB, in1, in2, in3, in4;  // de Param.ino
-extern Servo servo1, servo2;                   // de Param.ino
+#include <Servo.h>
+#include <AccelStepper.h>
 
+// —————— Parámetros externos (de Param.ino) ——————
+extern const int enA, enB, in1, in2, in3, in4;
+extern Servo servo1, servo2;
+extern const int servo1pin, servo2pin;
+
+// —————— Configuración del stepper ——————
+#define MotorInterfaceType 4
+const float stepPerRevolution = 2048.0;  // pasos/rev eje de salida
+const float MAX_RPM           = 20.0;   // tope en RPM
+const float MAX_ACCEL         = 500.0;  // pasos/s², ajusta a tu gusto
+
+// Pines según tu ULN2003 wiring: IN1→pin, IN2→pin, etc.
+AccelStepper myStepper(MotorInterfaceType, 8, 10, 9, 1);
+
+// —————— Inicialización ——————
+void initSteppers(){
+  // Fijamos aceleración y velocidad punta
+  myStepper.setAcceleration(MAX_ACCEL);
+  float maxStepsPerSec = (MAX_RPM / 60.0) * stepPerRevolution;
+  myStepper.setMaxSpeed(maxStepsPerSec);
+  myStepper.setSpeed(0);
+}
+
+// —————— Control por RPM ——————
+/**
+ * @param rpm  Velocidad en RPM (-MAX_RPM..+MAX_RPM)
+ */
+void avanzarSteppers(float rpm){
+  // Convertimos RPM a pasos/segundo
+  float stepsPerSec = (rpm / 60.0) * stepPerRevolution;
+  // Ajustamos como objetivo de velocidad
+  myStepper.setSpeed(stepsPerSec);
+}
+
+// —————— Ejecución en bucle ——————
+/**
+ * Debe llamarse en cada iteración de loop() para aplicar
+ * aceleración y mantener la velocidad objetivo.
+ */
+void stepper(){
+  myStepper.run();  
+}
+
+// —————— Resto de motores y servos ——————
 void initMotors() {
   pinMode(enA, OUTPUT);
   pinMode(enB, OUTPUT);
@@ -8,8 +52,8 @@ void initMotors() {
   pinMode(in2, OUTPUT);
   pinMode(in3, OUTPUT);
   pinMode(in4, OUTPUT);
-  servo1.attach(9);
-  servo2.attach(10);
+  servo1.attach(servo1pin);
+  servo2.attach(servo2pin);
   setServoAngles(90, 90);
   detener();
 }
