@@ -9,7 +9,6 @@ void setup() {
   initMotors();
   //initSteppers();
   initMPU();
-  
 }
 
 void loop() {

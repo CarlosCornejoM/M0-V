@@ -109,7 +109,7 @@ void computeAngles() {
 }
 
 void sendTelemetry() {
-  
+  return
   Serial.print("Pitch: "); Serial.print(pitch,2);
   Serial.print(" | Roll: "); Serial.print(roll,2);
   Serial.print(" | Yaw: "); Serial.println(yaw,2);

@@ -1,4 +1,3 @@
-// ------------------ index_html.h ------------------
 #ifndef INDEX_HTML_H
 #define INDEX_HTML_H
 
@@ -146,11 +145,23 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       <div class="card controls">
         <div class="section">
           <h3>Audio & LEDs</h3>
+
+
+
+
+
           <button class="btn-action" onclick="sendCmd('playMelody')">🎵 Play Melody</button>
+          <button class="btn-action" onclick="sendCmd('playAudio')">🔊 Play Audio</button>
           <button class="btn-action" onclick="sendCmd('espOn')">ESP ON</button>
           <button class="btn-action" onclick="sendCmd('espOff')">ESP OFF</button>
           <button class="btn-action" onclick="sendCmd('unoOn')">UNO ON</button>
           <button class="btn-action" onclick="sendCmd('unoOff')">UNO OFF</button>
+          <button class="btn-action" onclick="sendCmd('dcOn')">DC ON</button>
+          <button class="btn-action" onclick="sendCmd('dcOff')">DC OFF</button>
+
+
+
+
         </div>
         <div class="section">
           <h3>Servos (Right Stick Auto)</h3>
@@ -255,53 +266,38 @@ function appendSerial(line){
   ser.scrollTop = ser.scrollHeight;
 }
 
+// Inicial mapping default
 let buttonMappings = Array(16).fill().map(()=>({action:'',type:'onPress'}));
 buttonMappings[0] = {action:'playMelody',type:'onPress'};
 buttonMappings[2] = {action:'espOn',type:'onPress'};
 buttonMappings[1] = {action:'espOff',type:'onPress'};
+buttonMappings[3] = {action:'playAudio',type:'onPress'};
 
 let prevButtonState = Array(16).fill(false);
 let state={lx:0,ly:0,rx:0,ry:0,tl:0,tr:0,btn:Array(16).fill(false)};
 
-// NUEVA FUNCIÓN: Mapear valores del stick (-1 a 1) a ángulos de servo (0 a 180)
+// Map stick (-1..1) to 0..180
 function mapStickToServo(stickValue) {
-  // Convierte de rango -1,1 a 0,180
   return Math.round(((stickValue + 1) / 2) * 180);
 }
 
-// NUEVA FUNCIÓN: Enviar comandos de servo basado en stick derecho
+// Send servos from stick
 function updateServosFromStick() {
   const now = Date.now();
-  
-  // Throttle: solo enviar cada SERVO_SEND_INTERVAL ms
   if (now - lastServoSent < SERVO_SEND_INTERVAL) return;
-  
-  // Calcular ángulos basados en stick derecho
-  const servo1Angle = mapStickToServo(state.rx); // Horizontal (izq-der)
-  const servo2Angle = mapStickToServo(-state.ry); // Vertical (arriba-abajo, invertido)
-  
-  // Solo enviar si los ángulos han cambiado significativamente (más de 2 grados)
-  if (Math.abs(servo1Angle - lastServoAngles.a1) > 2 || 
+  const servo1Angle = mapStickToServo(state.rx);
+  const servo2Angle = mapStickToServo(-state.ry);
+  if (Math.abs(servo1Angle - lastServoAngles.a1) > 2 ||
       Math.abs(servo2Angle - lastServoAngles.a2) > 2) {
-    
-    // Actualizar sliders visuales sin disparar eventos de usuario
-    userIsAdjustingSliders = false; // Permitir actualización programática
+    userIsAdjustingSliders = false;
     document.getElementById('s1').value = servo1Angle;
     document.getElementById('s2').value = servo2Angle;
     document.getElementById('s1v').textContent = servo1Angle + '°';
     document.getElementById('s2v').textContent = servo2Angle + '°';
-    
-    // Enviar comando al ESP8266
-    ws.send(JSON.stringify({
-      cmd: 'setServos',
-      a1: servo1Angle,
-      a2: servo2Angle
-    }));
-    
+    ws.send(JSON.stringify({ cmd: 'setServos', a1: servo1Angle, a2: servo2Angle }));
     lastServoSent = now;
     lastServoAngles = {a1: servo1Angle, a2: servo2Angle};
-    
-    console.log(`Servos: S1=${servo1Angle}°, S2=${servo2Angle}° (RX=${state.rx.toFixed(2)}, RY=${state.ry.toFixed(2)})`);
+    console.log(`Servos: S1=${servo1Angle}°, S2=${servo2Angle}°`);
   }
 }
 
@@ -313,9 +309,21 @@ function createMappingTable(){
     const cBtn=row.insertCell(), cA=row.insertCell(), cT=row.insertCell();
     cBtn.textContent = `${i}: ${['□','○','✕','△','L1','R1','L2','R2','⚏','☰','L3','R3','↑','↓','←','→'][i]}`;
     const selA=document.createElement('select');
-    ['', 'playMelody','espOn','espOff','unoOn','unoOff'].forEach(v=>{
+
+
+
+
+
+
+
+    ['', 'playMelody','playAudio','espOn','espOff','unoOn','unoOff','dcOn','dcOff'].forEach(v=>{
       const o=document.createElement('option');o.value=v;o.textContent=v||'(none)'; selA.appendChild(o);
     });
+
+
+
+
+
     selA.value=bm.action; selA.onchange=()=>bm.action=selA.value; cA.appendChild(selA);
     const selT=document.createElement('select');
     ['onPress','onHold'].forEach(v=>{
@@ -335,21 +343,19 @@ function updateGamepadList(){
   });
 }
 
-// FUNCIÓN MODIFICADA: pollGamepad con control de servos
 function pollGamepad(){
   const idx = parseInt(document.getElementById('gpSelect').value);
   if(isNaN(idx)) return;
   const g = navigator.getGamepads()[idx];
   if(!g) return;
-  
+
   g.buttons.forEach((b,i)=>{
     if(i<16){
       const pressed = b.pressed;
       if(pressed !== prevButtonState[i]){
         prevButtonState[i] = pressed;
-        let eff = i===0?2 : i===2?0 : i;
-        const bm = buttonMappings[eff];
-        const btnEl = document.getElementById(`btn${eff}`);
+        const bm = buttonMappings[i];
+        const btnEl = document.getElementById(`btn${i}`);
         if(pressed){
           btnEl.classList.add('active');
           if(bm.action && bm.type==='onPress') sendCmd(bm.action);
@@ -360,24 +366,19 @@ function pollGamepad(){
       state.btn[i] = pressed;
     }
   });
-  
+
   state.lx = g.axes[0]||0; state.ly = g.axes[1]||0;
   state.rx = g.axes[2]||0; state.ry = g.axes[3]||0;
   state.tl = g.buttons[6]?.value||0; state.tr = g.buttons[7]?.value||0;
-  updateVisuals(); 
-  
-  // NUEVA LÍNEA: Actualizar servos basado en stick derecho
+  updateVisuals();
   updateServosFromStick();
-  
   ws.send(JSON.stringify({cmd:'gamepad',...state}));
 }
 
 function updateVisuals(){
-  const r = 125;
-  document.getElementById('dotL').style.transform =
-    `translate(${-50+state.lx*r}%,${-50+state.ly*r}%)`;
-  document.getElementById('dotR').style.transform =
-    `translate(${-50+state.rx*r}%,${-50+state.ry*r}%)`;
+  const r=125;
+  document.getElementById('dotL').style.transform = `translate(${-50+state.lx*r}%,${-50+state.ly*r}%)`;
+  document.getElementById('dotR').style.transform = `translate(${-50+state.rx*r}%,${-50+state.ry*r}%)`;
   document.getElementById('trigL').style.width = `${state.tl*100}%`;
   document.getElementById('trigR').style.width = `${state.tr*100}%`;
 }
@@ -420,22 +421,12 @@ function updateMotor(){
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-  const sliders = ['s1', 's2', 'mv', 'mt', 'ms'];
-  sliders.forEach(id => {
-    const element = document.getElementById(id);
-    if(element) {
-      element.addEventListener('input', () => {
-        userIsAdjustingSliders = true;
-        lastUserSliderUpdate = Date.now();
-      });
-      element.addEventListener('mousedown', () => {
-        userIsAdjustingSliders = true;
-        lastUserSliderUpdate = Date.now();
-      });
-      element.addEventListener('touchstart', () => {
-        userIsAdjustingSliders = true;
-        lastUserSliderUpdate = Date.now();
-      });
+  ['s1','s2','mv','mt','ms'].forEach(id => {
+    const el=document.getElementById(id);
+    if(el){
+      el.addEventListener('input', () => { userIsAdjustingSliders=true; lastUserSliderUpdate=Date.now(); });
+      el.addEventListener('mousedown', () => { userIsAdjustingSliders=true; lastUserSliderUpdate=Date.now(); });
+      el.addEventListener('touchstart', () => { userIsAdjustingSliders=true; lastUserSliderUpdate=Date.now(); });
     }
   });
 });
@@ -445,10 +436,10 @@ function sendServos(){ws.send(JSON.stringify({cmd:'setServos',a1:+document.getEl
 function sendMotor(){ws.send(JSON.stringify({cmd:'setMotor',vel:+document.getElementById('mv').value,time:+document.getElementById('mt').value,sel:+document.getElementById('ms').value}));}
 
 ws.onopen=()=>{
-  updateGamepadList();createMappingTable();
+  updateGamepadList(); createMappingTable();
   setInterval(pollGamepad,16);
   setInterval(()=>{
-    lastSent=Date.now();ws.send(JSON.stringify({cmd:'ping'}));
+    lastSent=Date.now(); ws.send(JSON.stringify({cmd:'ping'}));
   },1000);
   setInterval(drawLatency,100);
 };
@@ -456,41 +447,37 @@ ws.onopen=()=>{
 ws.onmessage=e=>{
   const obj=JSON.parse(e.data);
   if(obj.cmd==='pong'){
-    const lat=Date.now()-lastSent;latencies.push(lat);points.push({y:lat});
-    if(latencies.length>50){latencies.shift();points.shift();}
+    const lat=Date.now()-lastSent; latencies.push(lat); points.push({y:lat});
+    if(latencies.length>50){latencies.shift(); points.shift();}
     document.getElementById('avg').textContent=(latencies.reduce((a,b)=>a+b,0)/latencies.length).toFixed(0);
     document.getElementById('std').textContent=Math.sqrt(latencies.reduce((a,b)=>a+Math.pow(b-(latencies.reduce((a,b)=>a+b,0)/latencies.length),2),0)/latencies.length).toFixed(0);
     document.getElementById('current').textContent=lat;
     if(document.getElementById('perfSection').style.display!=='none') drawLatency();
   }
-  if(obj.serial){obj.serial.trim().split(/[\r\n]+/).forEach(l=>appendSerial(l));}
-  
-  const timeSinceLastUserUpdate = Date.now() - lastUserSliderUpdate;
-  const canUpdateSliders = !userIsAdjustingSliders && 
-                          obj.cmd !== 'gamepad' && 
-                          timeSinceLastUserUpdate > 2000 &&
-                          (obj.servo1 !== undefined || obj.servo2 !== undefined || 
-                           obj.motorVel !== undefined || obj.motorTime !== undefined || 
-                           obj.motorSel !== undefined);
-  
-  if(canUpdateSliders) {
+  if(obj.serial){ obj.serial.trim().split(/[\r\n]+/).forEach(l=>appendSerial(l)); }
+
+  const since=Date.now()-lastUserSliderUpdate;
+  const canUpdate=!userIsAdjustingSliders && obj.cmd!=='gamepad' && since>2000 &&
+    (obj.servo1!==undefined||obj.servo2!==undefined||obj.motorVel!==undefined||obj.motorTime!==undefined||obj.motorSel!==undefined);
+
+  if(canUpdate){
     ['servo1','servo2','motorVel','motorTime','motorSel'].forEach(k=>{
       if(obj[k]!==undefined){
-        const id=k==='servo1'?'s1':k==='servo2'?'s2':k==='motorVel'?'mv':k==='motorTime'?'mt':'ms';
-        const element = document.getElementById(id);
-        if(element && element.value != obj[k]) {
-          element.value=obj[k];
-          if(k==='servo1'||k==='servo2')document.getElementById(id+'v').textContent=obj[k]+'°';
-          if(k==='motorVel')document.getElementById('mvv').textContent=obj[k];
-          if(k==='motorTime')document.getElementById('mtv').textContent=obj[k]+'ms';
+        const id=k==='servo1'?'s1':k==='servo2'?'s2':k==='motorVel'?'mv':'mt';
+        const el=document.getElementById(id);
+        if(el && el.value!=obj[k]){
+          el.value=obj[k];
+          if(k==='servo1'||k==='servo2') document.getElementById(id+'v').textContent=obj[k]+'°';
+          if(k==='motorVel') document.getElementById('mvv').textContent=obj[k];
+          if(k==='motorTime') document.getElementById('mtv').textContent=obj[k]+'ms';
         }
       }
     });
   }
 };
 
-window.addEventListener('gamepadconnected',updateGamepadList);
-window.addEventListener('gamepaddisconnected',updateGamepadList);
+window.addEventListener('gamepadconnected', updateGamepadList);
+window.addEventListener('gamepaddisconnected', updateGamepadList);
 </script>
 </body>
 </html>

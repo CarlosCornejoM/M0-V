@@ -29,11 +29,12 @@ void handleHCSR04() {
   // 2) Medir eco con timeout
   unsigned long dur = pulseIn(echoPin, HIGH, TIMEOUT_US);
   if (dur == 0) {
+    return;
     // timeout → no actualiza filtro
     Serial.print("Distance: ");
     Serial.print(filteredDistance);
     Serial.println(" cm");
-    return;
+    
   }
 
   // 3) Calcular distancia en cm
@@ -42,10 +43,11 @@ void handleHCSR04() {
   // 4) Validar rango
   if (d < MIN_DIST_CM || d > MAX_DIST_CM) {
     // lectura anómala → descarta
+    return;
     Serial.print("Distance: ");
     Serial.print(filteredDistance);
     Serial.println(" cm");
-    return;
+    
   }
 
   // 5) Filtrar con IIR: y = α·x + (1–α)·y_prev
@@ -53,6 +55,7 @@ void handleHCSR04() {
                    + (1.0F - FILTER_ALPHA) * filteredDistance;
 
   // 6) Imprimir distancia filtrada
+  return
   Serial.print("Distance: ");
   Serial.print(filteredDistance);
   Serial.println(" cm");

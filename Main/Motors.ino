@@ -5,6 +5,7 @@
 extern const int enA, enB, in1, in2, in3, in4;
 extern Servo servo1, servo2;
 extern const int servo1pin, servo2pin;
+extern const int motordc;
 
 // —————— Configuración del stepper ——————
 #define MotorInterfaceType 4
@@ -15,9 +16,12 @@ const float MAX_ACCEL         = 500.0;  // pasos/s², ajusta a tu gusto
 // Pines según tu ULN2003 wiring: IN1→pin, IN2→pin, etc.
 AccelStepper myStepper(MotorInterfaceType, 8, 10, 9, 1);
 
+// Variables de estado para el motor DC
+bool motorRunning = false;
+int currentPWM = 0;  // PWM actual aplicado al motor (0..255)
+
 // —————— Inicialización ——————
 void initSteppers(){
-  // Fijamos aceleración y velocidad punta
   myStepper.setAcceleration(MAX_ACCEL);
   float maxStepsPerSec = (MAX_RPM / 60.0) * stepPerRevolution;
   myStepper.setMaxSpeed(maxStepsPerSec);
@@ -25,21 +29,12 @@ void initSteppers(){
 }
 
 // —————— Control por RPM ——————
-/**
- * @param rpm  Velocidad en RPM (-MAX_RPM..+MAX_RPM)
- */
 void avanzarSteppers(float rpm){
-  // Convertimos RPM a pasos/segundo
   float stepsPerSec = (rpm / 60.0) * stepPerRevolution;
-  // Ajustamos como objetivo de velocidad
   myStepper.setSpeed(stepsPerSec);
 }
 
 // —————— Ejecución en bucle ——————
-/**
- * Debe llamarse en cada iteración de loop() para aplicar
- * aceleración y mantener la velocidad objetivo.
- */
 void stepper(){
   myStepper.run();  
 }
@@ -56,6 +51,7 @@ void initMotors() {
   servo2.attach(servo2pin);
   setServoAngles(90, 90);
   detener();
+  dcmotor(false);
 }
 
 void avanzar(int velocidad, int tiempo, int motor) {
@@ -92,3 +88,24 @@ void setServoAngles(int a1, int a2) {
   Serial.print("Servos -> "); Serial.print(a1);
   Serial.print("°, "); Serial.print(a2); Serial.println("°");
 }
+
+// —————— Control de motor DC con rampa inteligente ——————
+
+void dcmotor(float level) {
+  // Limitar nivel de 0.0 a 1.0
+  level = constrain(level, 0.0f, 1.0f);
+
+  // Calcular PWM destino (0–255)
+  int target = round(level * 255.0f);
+
+  // Si no cambia, salir
+  if (target == currentPWM) return;
+
+  // Escribir valor directamente
+  analogWrite(motordc, target);
+
+  // Actualizar estado
+  currentPWM   = target;
+  motorRunning = (target > 0);
+}
+

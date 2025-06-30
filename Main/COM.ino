@@ -40,6 +40,14 @@ void handleCOM() {
           }
         }
 
+        // --- Comando MOTOR sin driver (nivel DC entre 0.0 y 1.0) ---
+        else if (cmd.startsWith("DC,")) {
+          // formato esperado: [DC,0.0] … [DC,1.0]
+          float level = cmd.substring(3).toFloat();      // extrae desde el carácter 3 hasta el final
+          level = constrain(level, 0.0f, 1.0f);           // asegurarse de que esté en [0,1]
+          dcmotor(level);                                 // llama a tu nueva dcmotor(float)
+        }
+
 
         // --- Comando SERVOS ---
         else if (cmd.startsWith("S,")) {
