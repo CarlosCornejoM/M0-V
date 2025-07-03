@@ -1,6 +1,12 @@
 String inString;
 #define PIN_LEDuno LED_BUILTIN
 extern const float MAX_RPM;
+
+extern float setPoint;
+extern float Kp;
+extern float Ki;
+extern float Kd;
+
 // ------------------------------------------------------------------------------
 // Inicialización y manejo de la COM serie con el ESP
 
@@ -26,7 +32,7 @@ void handleCOM() {
           Serial.println("=== Iniciando calibración por GUI ===");
           calibrateGyro();
           Serial.println("=== Calibración completa ===\n");
-          }
+        }
 
         // --- Comando MOTOR ---
         if (cmd.startsWith("M,")) {
@@ -42,12 +48,10 @@ void handleCOM() {
 
         // --- Comando MOTOR sin driver (nivel DC entre 0.0 y 1.0) ---
         else if (cmd.startsWith("DC,")) {
-          // formato esperado: [DC,0.0] … [DC,1.0]
-          float level = cmd.substring(3).toFloat();      // extrae desde el carácter 3 hasta el final
-          level = constrain(level, 0.0f, 1.0f);           // asegurarse de que esté en [0,1]
-          dcmotor(level);                                 // llama a tu nueva dcmotor(float)
+          float level = cmd.substring(3).toFloat();
+          level = constrain(level, 0.0f, 1.0f);
+          dcmotor(level);
         }
-
 
         // --- Comando SERVOS ---
         else if (cmd.startsWith("S,")) {
@@ -59,39 +63,54 @@ void handleCOM() {
           }
         }
 
+        // --- Comando PID-TUNING con setPoint y constantes Kp, Ki, Kd ---
+        else if (cmd.startsWith("PIDT,")) {
+          int p1 = cmd.indexOf(',');
+          int p2 = cmd.indexOf(',', p1 + 1);
+          int p3 = cmd.indexOf(',', p2 + 1);
+          int p4 = cmd.indexOf(',', p3 + 1);
+          
+          float sp = cmd.substring(p1 + 1, p2).toFloat();
+          float KP = cmd.substring(p2 + 1, p3).toFloat();
+          float KI = cmd.substring(p3 + 1, p4).toFloat();
+          float KD = cmd.substring(p4 + 1).toFloat();
+          
+          setPoint = sp;
+          Kp = KP;
+          Ki = KI;
+          Kd = KD;
+          
+          resetPIDState();
+        }
 
-        // --- Comando JOY_L: mapeo de -1..1 a 0..180 ---
+        // --- Comando JOY_L: control del stepper ---
         else if (cmd.startsWith("JOY_L:")) {
           String vals = cmd.substring(6);
           int comma = vals.indexOf(',');
           if (comma > 0) {
-            // parseamos sólo el eje Y
             float fy = vals.substring(comma + 1).toFloat();
-            // mapeamos [-1, +1] → [-MAX_RPM, +MAX_RPM]
             float rpm = fy * MAX_RPM;
-            avanzarSteppers(rpm);
-            
+            Serial.println(rpm);
+            // Llamar directamente a la función del stepper
+            setStepperRPM(rpm);
+ 
           }
-         }
+        }
 
-
-        // --- Comando JOY_R: mapeo de -1..1 a 0..180 ---
+        // --- Comando JOY_R: control de servos ---
         else if (cmd.startsWith("JOY_R:")) {
           String vals = cmd.substring(6);
           int comma = vals.indexOf(',');
           if (comma > 0) {
             float fx = vals.substring(0, comma).toFloat();
             float fy = vals.substring(comma + 1).toFloat();
-            // mapear [-1.0,1.0] → [0,180]
             int angle1 = roundf( (fx + 1.0f) * 90.0f );
             int angle2 = roundf( (fy + 1.0f) * 90.0f );
             setServoAngles(angle1, angle2);
           }
         }
 
-
-
-        // --- Comandos de LED existentes ---
+        // --- Comandos de LED ---
         else if (cmd == "UNOON") {
           digitalWrite(PIN_LEDuno, HIGH);
           Serial.println(" -> UNO LED ON");
@@ -101,7 +120,6 @@ void handleCOM() {
           Serial.println(" -> UNO LED OFF");
         }
       }
-      // limpiamos el buffer para el siguiente comando
       inString = "";
     }
   }

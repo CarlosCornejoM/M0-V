@@ -2,20 +2,22 @@
 #include <Servo.h>
 #include <AccelStepper.h>
 
+
 void setup() {
   initParams();
-  initCOM();
+  initSteppers();
   initHCSR04();
   initMotors();
-  //initSteppers();
   initMPU();
+  initCOM();
+  
+  initPID();
 }
 
 void loop() {
+  //handleHCSR04();
+  //updateMPU();
   handleCOM();
-  //stepper();
-  handleHCSR04();
-  updateMPU();
-  //actualizarMotors();  // ver despues el orden para PID
-  
+  runSteppers();
+  //handlePID();
 }

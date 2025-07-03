@@ -1,16 +1,17 @@
-// Param.ino
-extern const int trigPin;  // de Param.ino
-extern const int echoPin;  // de Param.ino
-
 // HCSR04.ino
 
-// ===== Parámetros de lectura =====
-static const unsigned long TIMEOUT_US   = 30000UL;  // 30 ms timeout (~5 m)
-static const float        MIN_DIST_CM  =   2.0F;   // 2 cm mínima distancia fiable
-static const float        MAX_DIST_CM  = 400.0F;   // 400 cm máxima distancia fiable
-static const float        FILTER_ALPHA =   0.3F;   // coef. IIR (0<α<1)
+#include <Arduino.h>
+#include <NewPing.h>
 
-static float filteredDistance = MAX_DIST_CM;  // valor inicial alto
+// Pines de Param.ino
+extern const int trigPin, echoPin;
+
+#define ITERATIONS     6
+#define MAX_DISTANCE 300
+#define PING_INTERVAL 10
+
+NewPing sonar(trigPin, echoPin, MAX_DISTANCE);
+float median = 0.0;
 
 void initHCSR04() {
   pinMode(trigPin, OUTPUT);
@@ -19,44 +20,33 @@ void initHCSR04() {
 }
 
 void handleHCSR04() {
-  // 1) Trigger de 10 µs
-  digitalWrite(trigPin, LOW);
-  delayMicroseconds(2);
-  digitalWrite(trigPin, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(trigPin, LOW);
+  static unsigned long lastMillis = 0;
+  unsigned long now = millis();
+  if (now - lastMillis < (unsigned long)PING_INTERVAL * ITERATIONS) return;
+  lastMillis = now;
 
-  // 2) Medir eco con timeout
-  unsigned long dur = pulseIn(echoPin, HIGH, TIMEOUT_US);
-  if (dur == 0) {
-    return;
-    // timeout → no actualiza filtro
-    Serial.print("Distance: ");
-    Serial.print(filteredDistance);
-    Serial.println(" cm");
-    
+  float readings[ITERATIONS];
+  uint8_t cnt = 0;
+  for (uint8_t i=0; i<ITERATIONS; i++) {
+    unsigned int d = sonar.ping();
+    float dist = (d*0.0343F)/2.0F;
+    if (d>0 && dist<=MAX_DISTANCE) readings[cnt++] = dist;
+    delay(PING_INTERVAL);
   }
+  if (!cnt) return;
 
-  // 3) Calcular distancia en cm
-  float d = (dur * 0.0343F) / 2.0F;
-
-  // 4) Validar rango
-  if (d < MIN_DIST_CM || d > MAX_DIST_CM) {
-    // lectura anómala → descarta
-    return;
-    Serial.print("Distance: ");
-    Serial.print(filteredDistance);
-    Serial.println(" cm");
-    
+  for (uint8_t i=1; i<cnt; i++) {
+    float key = readings[i];
+    int8_t j = i-1;
+    while (j>=0 && readings[j]>key) {
+      readings[j+1] = readings[j];
+      j--;
+    }
+    readings[j+1] = key;
   }
-
-  // 5) Filtrar con IIR: y = α·x + (1–α)·y_prev
-  filteredDistance = FILTER_ALPHA * d
-                   + (1.0F - FILTER_ALPHA) * filteredDistance;
-
-  // 6) Imprimir distancia filtrada
-  return
-  Serial.print("Distance: ");
-  Serial.print(filteredDistance);
-  Serial.println(" cm");
+  median = readings[cnt/2];
+  Serial.print("[US,");
+  Serial.print(median,2);
+  Serial.println("]");
 }
+

@@ -1,45 +1,83 @@
+// Motors.ino
+
 #include <Servo.h>
 #include <AccelStepper.h>
 
-// —————— Parámetros externos (de Param.ino) ——————
+// Externs de Param.ino
 extern const int enA, enB, in1, in2, in3, in4;
 extern Servo servo1, servo2;
 extern const int servo1pin, servo2pin;
 extern const int motordc;
+extern const float MAX_RPM;
 
-// —————— Configuración del stepper ——————
-#define MotorInterfaceType 4
-const float stepPerRevolution = 2048.0;  // pasos/rev eje de salida
-const float MAX_RPM           = 20.0;   // tope en RPM
-const float MAX_ACCEL         = 500.0;  // pasos/s², ajusta a tu gusto
+// Define pin connections para el driver de paso a paso
+const int dirPin     = 2;
+const int stepPin    = 3;
+const int enablePin  = A0;    // A0 = ENABLE del driver
 
-// Pines según tu ULN2003 wiring: IN1→pin, IN2→pin, etc.
-AccelStepper myStepper(MotorInterfaceType, 8, 10, 9, 1);
+// Parámetros del stepper
+const float STEPS_PER_REV = 2048.0; // pasos por revolución (p.ej. 28BYJ‑48 con reduccion)
 
-// Variables de estado para el motor DC
-bool motorRunning = false;
-int currentPWM = 0;  // PWM actual aplicado al motor (0..255)
+AccelStepper stepper(AccelStepper::DRIVER, stepPin, dirPin);
 
-// —————— Inicialización ——————
-void initSteppers(){
-  myStepper.setAcceleration(MAX_ACCEL);
-  float maxStepsPerSec = (MAX_RPM / 60.0) * stepPerRevolution;
-  myStepper.setMaxSpeed(maxStepsPerSec);
-  myStepper.setSpeed(0);
+bool stepperEnabled = false;
+float currentRPM    = 0.0;
+
+// ----------------------- Inicialización -----------------------
+void initSteppers() {
+  pinMode(enablePin, OUTPUT);
+  disableSteppers();
+  
+  stepper.setMaxSpeed( (MAX_RPM/60.0) * STEPS_PER_REV );   // velocidad máxima en pasos/s
+  stepper.setAcceleration( 10 * (MAX_RPM/60.0) * STEPS_PER_REV ); // aceleración en pasos/s²
+  stepper.setSpeed(0);
 }
 
-// —————— Control por RPM ——————
-void avanzarSteppers(float rpm){
-  float stepsPerSec = (rpm / 60.0) * stepPerRevolution;
-  myStepper.setSpeed(stepsPerSec);
+// Habilita el driver (LOW = habilitado en muchos módulos)
+void enableSteppers() {
+  digitalWrite(enablePin, LOW);
+  stepperEnabled = true;
 }
 
-// —————— Ejecución en bucle ——————
-void stepper(){
-  myStepper.run();  
+// Deshabilita el driver (HIGH = deshabilitado)
+void disableSteppers() {
+  digitalWrite(enablePin, HIGH);
+  stepperEnabled = false;
+  stepper.setSpeed(0);
+  currentRPM = 0.0;
 }
 
-// —————— Resto de motores y servos ——————
+// Ajusta la velocidad en RPM; si rpm == 0 detiene y deshabilita
+void setStepperRPM(float rpm) {
+  rpm = constrain(rpm, -MAX_RPM, MAX_RPM);
+  if (fabs(rpm) < 0.01f) {
+    // detener completamente
+    disableSteppers();
+    return;
+  }
+
+  if (!stepperEnabled) {
+    enableSteppers();
+  }
+
+  currentRPM = rpm;
+  // convertir RPM a pasos/segundo
+  float stepsPerSec = (rpm / 60.0f) * STEPS_PER_REV;
+  Serial.println(stepsPerSec);
+  stepper.setSpeed(stepsPerSec);
+}
+
+// Debe llamarse desde loop(); ejecuta un paso si hay velocidad
+void runSteppers() {
+  if (digitalRead(enablePin) == LOW) {
+    stepper.runSpeed();
+  }
+}
+
+// ------------------- Control DC y servos -------------------
+bool motorDCRunning = false;
+int  lastDCLevel    = -1;
+
 void initMotors() {
   pinMode(enA, OUTPUT);
   pinMode(enB, OUTPUT);
@@ -50,28 +88,30 @@ void initMotors() {
   servo1.attach(servo1pin);
   servo2.attach(servo2pin);
   setServoAngles(90, 90);
-  detener();
-  dcmotor(false);
+  detenerDC();
+  dcmotor(0);
 }
 
 void avanzar(int velocidad, int tiempo, int motor) {
-  detener();
+  detenerDC();
   velocidad = constrain(velocidad, -255, 255);
+
   if (motor == 1 || motor == 3) {
-    digitalWrite(in1, velocidad >= 0 ? HIGH : LOW);
-    digitalWrite(in2, velocidad >= 0 ? LOW  : HIGH);
+    digitalWrite(in1, velocidad >= 0);
+    digitalWrite(in2, velocidad <  0);
     analogWrite(enA, abs(velocidad));
   }
   if (motor == 2 || motor == 3) {
-    digitalWrite(in3, velocidad >= 0 ? HIGH : LOW);
-    digitalWrite(in4, velocidad >= 0 ? LOW  : HIGH);
+    digitalWrite(in3, velocidad >= 0);
+    digitalWrite(in4, velocidad <  0);
     analogWrite(enB, abs(velocidad));
   }
+
   delay(tiempo);
-  detener();
+  detenerDC();
 }
 
-void detener() {
+void detenerDC() {
   analogWrite(enA, 0);
   analogWrite(enB, 0);
   digitalWrite(in1, LOW);
@@ -85,27 +125,20 @@ void setServoAngles(int a1, int a2) {
   a2 = constrain(a2, 0, 180);
   servo1.write(a1);
   servo2.write(a2);
-  Serial.print("Servos -> "); Serial.print(a1);
-  Serial.print("°, "); Serial.print(a2); Serial.println("°");
+  Serial.print("Servos -> ");
+  Serial.print(a1);
+  Serial.print("°, ");
+  Serial.print(a2);
+  Serial.println("°");
 }
-
-// —————— Control de motor DC con rampa inteligente ——————
 
 void dcmotor(float level) {
-  // Limitar nivel de 0.0 a 1.0
   level = constrain(level, 0.0f, 1.0f);
-
-  // Calcular PWM destino (0–255)
-  int target = round(level * 255.0f);
-
-  // Si no cambia, salir
-  if (target == currentPWM) return;
-
-  // Escribir valor directamente
-  analogWrite(motordc, target);
-
-  // Actualizar estado
-  currentPWM   = target;
-  motorRunning = (target > 0);
+  int pwm = round(level * 255.0f);
+  if (pwm == lastDCLevel) return;
+  analogWrite(motordc, pwm);
+  lastDCLevel    = pwm;
+  motorDCRunning = (pwm > 0);
 }
+
 
