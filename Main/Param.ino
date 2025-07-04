@@ -34,7 +34,7 @@ float Kp       = 1.0;
 float Ki       = 0.02;
 float Kd       = 0.5;
 
-const float MAX_RPM = 30.0;  // usado por el stepper
+float MAX_RPM = 30.0;  // usado por el stepper
 
 void initParams() {
   Wire.begin();

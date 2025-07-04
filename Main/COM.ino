@@ -1,6 +1,6 @@
 String inString;
 #define PIN_LEDuno LED_BUILTIN
-extern const float MAX_RPM;
+extern float MAX_RPM;
 
 extern float setPoint;
 extern float Kp;
@@ -109,6 +109,14 @@ void handleCOM() {
             setServoAngles(angle1, angle2);
           }
         }
+        
+
+        else if (cmd.startsWith("MRPM,")) {
+          // extraer el valor después de "MRPM,"
+          float mrpm = cmd.substring(5).toFloat();
+          // función tuya que fija el límite de rpm del driver:
+          MAX_RPM=mrpm;
+          }
 
         // --- Comandos de LED ---
         else if (cmd == "UNOON") {

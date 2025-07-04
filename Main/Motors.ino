@@ -8,7 +8,7 @@ extern const int enA, enB, in1, in2, in3, in4;
 extern Servo servo1, servo2;
 extern const int servo1pin, servo2pin;
 extern const int motordc;
-extern const float MAX_RPM;
+extern float MAX_RPM;
 
 // Define pin connections para el driver de paso a paso
 const int dirPin     = 2;
@@ -53,6 +53,7 @@ void setStepperRPM(float rpm) {
   if (fabs(rpm) < 0.01f) {
     // detener completamente
     disableSteppers();
+    currentRPM = 0.0;
     return;
   }
 
@@ -68,11 +69,28 @@ void setStepperRPM(float rpm) {
 }
 
 // Debe llamarse desde loop(); ejecuta un paso si hay velocidad
+// Debe llamarse desde loop(); ejecuta un paso si hay velocidad
 void runSteppers() {
-  if (digitalRead(enablePin) == LOW) {
+  static float lastSentRPM    = -1.0f;       // último RPM enviado
+  static unsigned long lastTs = 0;
+  unsigned long now = millis();
+
+  float rpmToSend = stepperEnabled ? currentRPM : 0.0f;
+
+    // Si cambió al menos 1 RPM, lo imprimimos
+    if (fabs(rpmToSend - lastSentRPM) > 1) {
+      Serial.print("[RPM,");
+      Serial.print(rpmToSend, 1);    // 1 decimal
+      Serial.println("]");
+      lastSentRPM = rpmToSend;
+    }
+
+  // ---- mover el stepper solo si está habilitado ----
+  if (stepperEnabled) {
     stepper.runSpeed();
   }
 }
+
 
 // ------------------- Control DC y servos -------------------
 bool motorDCRunning = false;
