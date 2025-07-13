@@ -1,5 +1,4 @@
-// Motors.ino
-
+// dual_stepper_control.ino
 #include <Servo.h>
 #include <AccelStepper.h>
 
@@ -10,89 +9,98 @@ extern const int servo1pin, servo2pin;
 extern const int motordc;
 extern float MAX_RPM;
 
-// Define pin connections para el driver de paso a paso
-const int dirPin     = 2;
-const int stepPin    = 3;
-const int enablePin  = A0;    // A0 = ENABLE del driver
+// Pines driver de paso a paso motor 1
+const int dirPin1    = 2;
+const int stepPin1   = 3;
 
+// Pines driver de paso a paso motor 2
+const int dirPin2    = 4;
+const int stepPin2   = 5;
+
+// Enable compartido (A0)
+const int enablePin1  = A0;
+const int enablePin2 = A1;
 // Parámetros del stepper
-const float STEPS_PER_REV = 2048.0; // pasos por revolución (p.ej. 28BYJ‑48 con reduccion)
+const float STEPS_PER_REV = 2048.0;
 
-AccelStepper stepper(AccelStepper::DRIVER, stepPin, dirPin);
+// Objetos AccelStepper para motores 1 y 2 (DRIVER)
+AccelStepper stepper1(AccelStepper::DRIVER, stepPin1, dirPin1);
+AccelStepper stepper2(AccelStepper::DRIVER, stepPin2, dirPin2);
 
-bool stepperEnabled = false;
-float currentRPM    = 0.0;
+bool steppersEnabled = false;
+float currentRPM1    = 0.0;
+float currentRPM2    = 0.0;
 
 // ----------------------- Inicialización -----------------------
 void initSteppers() {
-  pinMode(enablePin, OUTPUT);
-  disableSteppers();
+  pinMode(enablePin1, OUTPUT);
+  pinMode(enablePin2, OUTPUT);
+  disableStepper(1);
+  disableStepper(2);
   
-  stepper.setMaxSpeed( (MAX_RPM/60.0) * STEPS_PER_REV );   // velocidad máxima en pasos/s
-  stepper.setAcceleration( 10 * (MAX_RPM/60.0) * STEPS_PER_REV ); // aceleración en pasos/s²
-  stepper.setSpeed(0);
+  // Configuración de velocidades y aceleraciones
+  float maxStepsPerSec = (MAX_RPM / 60.0f) * STEPS_PER_REV;
+  stepper1.setMaxSpeed( maxStepsPerSec );
+  stepper1.setAcceleration( 10 * maxStepsPerSec );
+  stepper1.setSpeed(0);
+
+  stepper2.setMaxSpeed( maxStepsPerSec );
+  stepper2.setAcceleration( 10 * maxStepsPerSec );
+  stepper2.setSpeed(0);
 }
 
-// Habilita el driver (LOW = habilitado en muchos módulos)
-void enableSteppers() {
-  digitalWrite(enablePin, LOW);
-  stepperEnabled = true;
+void enableStepper(int m) {
+  if (m == 1) digitalWrite(enablePin1, LOW);
+  else        digitalWrite(enablePin2, LOW);
 }
 
-// Deshabilita el driver (HIGH = deshabilitado)
-void disableSteppers() {
-  digitalWrite(enablePin, HIGH);
-  stepperEnabled = false;
-  stepper.setSpeed(0);
-  currentRPM = 0.0;
+void disableStepper(int m) {
+  if (m == 1) {
+    digitalWrite(enablePin1, HIGH);
+    stepper1.setSpeed(0);
+    currentRPM1 = 0;
+  } else {
+    digitalWrite(enablePin2, HIGH);
+    stepper2.setSpeed(0);
+    currentRPM2 = 0;
+  }
 }
 
-// Ajusta la velocidad en RPM; si rpm == 0 detiene y deshabilita
-void setStepperRPM(float rpm) {
+void setStepperRPM(int m, float rpm) {
   rpm = constrain(rpm, -MAX_RPM, MAX_RPM);
   if (fabs(rpm) < 0.01f) {
-    // detener completamente
-    disableSteppers();
-    currentRPM = 0.0;
+    disableStepper(m);
     return;
   }
-
-  if (!stepperEnabled) {
-    enableSteppers();
-  }
-
-  currentRPM = rpm;
-  // convertir RPM a pasos/segundo
+  enableStepper(m);
   float stepsPerSec = (rpm / 60.0f) * STEPS_PER_REV;
-  Serial.println(stepsPerSec);
-  stepper.setSpeed(stepsPerSec);
+  if (m == 1) {
+    currentRPM1 = rpm;
+    stepper1.setSpeed(stepsPerSec);
+  } else {
+    currentRPM2 = rpm;
+    stepper2.setSpeed(stepsPerSec);
+  }
 }
-
-// Debe llamarse desde loop(); ejecuta un paso si hay velocidad
-// Debe llamarse desde loop(); ejecuta un paso si hay velocidad
+// Llamar desde loop(): mueve ambos steppers y reporta RPM
 void runSteppers() {
-  static float lastSentRPM    = -1.0f;       // último RPM enviado
-  static unsigned long lastTs = 0;
-  unsigned long now = millis();
+  static float lastSent1 = -1.0f;
+  static float lastSent2 = -1.0f;
 
-  float rpmToSend = stepperEnabled ? currentRPM : 0.0f;
+  stepper1.runSpeed();
+  stepper2.runSpeed();
 
-    // Si cambió al menos 1 RPM, lo imprimimos
-    if (fabs(rpmToSend - lastSentRPM) > 1) {
-      Serial.print("[RPM,");
-      Serial.print(rpmToSend, 1);    // 1 decimal
-      Serial.println("]");
-      lastSentRPM = rpmToSend;
-    }
-
-  // ---- mover el stepper solo si está habilitado ----
-  if (stepperEnabled) {
-    stepper.runSpeed();
+  if (fabs(currentRPM1 - lastSent1) > 1.0f) {
+    Serial.print("[RPM1,"); Serial.print(currentRPM1,1); Serial.println("]");
+    lastSent1 = currentRPM1;
+  }
+  if (fabs(currentRPM2 - lastSent2) > 1.0f) {
+    Serial.print("[RPM2,"); Serial.print(currentRPM2,1); Serial.println("]");
+    lastSent2 = currentRPM2;
   }
 }
 
-
-// ------------------- Control DC y servos -------------------
+// ------------------- Control DC y servos (sin cambios) -------------------
 bool motorDCRunning = false;
 int  lastDCLevel    = -1;
 
@@ -158,5 +166,3 @@ void dcmotor(float level) {
   lastDCLevel    = pwm;
   motorDCRunning = (pwm > 0);
 }
-
-

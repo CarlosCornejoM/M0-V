@@ -456,22 +456,22 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
           <h3>PID Tuning</h3>
           <div class="slider-group">
             <span>SP:</span>
-            <input class="slider" id="sp" type="range" min="0" max="300" value="25" oninput="updatePIDLabels()">
+            <input class="slider" id="sp" type="range" min="-100" max="0" value="-86" oninput="updatePIDLabels()">
             <span id="spv">25</span> cm
           </div>
           <div class="slider-group">
             <span>Kp:</span>
-            <input class="slider" id="kp" type="range" min="0" max="1000" value="100" oninput="updatePIDLabels()">
+            <input class="slider" id="kp" type="range" min="0" max="1000" value="0" oninput="updatePIDLabels()">
             <span id="kpv">1.00</span>
           </div>
           <div class="slider-group">
             <span>Ki:</span>
-            <input class="slider" id="ki" type="range" min="0" max="1000" value="20" oninput="updatePIDLabels()">
+            <input class="slider" id="ki" type="range" min="0" max="1000" value="0" oninput="updatePIDLabels()">
             <span id="kiv">0.02</span>
           </div>
           <div class="slider-group">
             <span>Kd:</span>
-            <input class="slider" id="kd" type="range" min="0" max="1000" value="500" oninput="updatePIDLabels()">
+            <input class="slider" id="kd" type="range" min="0" max="1000" value="0" oninput="updatePIDLabels()">
             <span id="kdv">0.50</span>
           </div>
           <button class="btn-action" onclick="sendPID()">Send PID</button>

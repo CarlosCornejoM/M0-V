@@ -6,17 +6,14 @@
 void setup() {
   initParams();
   initSteppers();
-  initHCSR04();
   initMotors();
   initMPU();
   initCOM();
-  
-  initPID();
+  //initPID();
 }
 
 void loop() {
-  //handleHCSR04();
-  //updateMPU();
+  updateMPU();
   handleCOM();
   runSteppers();
   //handlePID();

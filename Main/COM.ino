@@ -82,20 +82,35 @@ void handleCOM() {
           
           resetPIDState();
         }
+        
 
-        // --- Comando JOY_L: control del stepper ---
+        // --- Comando JOY_L: control de los dos steppers ---
         else if (cmd.startsWith("JOY_L:")) {
-          String vals = cmd.substring(6);
-          int comma = vals.indexOf(',');
-          if (comma > 0) {
-            float fy = vals.substring(comma + 1).toFloat();
-            float rpm = fy * MAX_RPM;
-            Serial.println(rpm);
-            // Llamar directamente a la función del stepper
-            setStepperRPM(rpm);
- 
-          }
-        }
+  // cmd = "JOY_L:fx,fy"
+  String vals = cmd.substring(6);
+  int comma = vals.indexOf(',');
+  if (comma > 0) {
+    float fx = vals.substring(0, comma).toFloat();    // eje X
+    float fy = vals.substring(comma + 1).toFloat();   // eje Y
+
+    // Ahora intercambiamos: el eje Y actúa como diferencial
+    //   left  = fx + fy
+    //   right = fx - fy
+    float vL = fx + fy;
+    float vR = fx - fy;
+
+    // Escalar a RPM máximo
+    float rpmL = constrain(vL * MAX_RPM, -MAX_RPM, MAX_RPM);
+    float rpmR = constrain(vR * MAX_RPM, -MAX_RPM, MAX_RPM);
+
+    // Llamadas a tu función de control
+    setStepperRPM(1, rpmL);
+    setStepperRPM(2, rpmR);
+  }
+}
+
+
+
 
         // --- Comando JOY_R: control de servos ---
         else if (cmd.startsWith("JOY_R:")) {
@@ -131,4 +146,4 @@ void handleCOM() {
       inString = "";
     }
   }
-}
+} 
