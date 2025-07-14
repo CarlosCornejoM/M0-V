@@ -2,23 +2,6 @@
 
 Este repositorio contiene el código fuente y documentación de un robot inspirado en WALL·E (modelo M0-V) que emplea un Arduino (Uno/Nano) para control y un ESP8266 como interfaz web para monitoreo y control remoto en tiempo real.
 
-## Estructura de archivos
-
-```
-├─ Arduino/            # Código de control en Arduino
-│  ├─ Main.ino         # Lógica de inicialización y bucle principal
-│  ├─ Param.ino        # Definición de pines y parámetros globales
-│  ├─ mpu_module.ino   # Lectura, filtrado y telemetría de MPU6050
-│  ├─ dual_stepper_control.ino  # Control de dos motores NEMA17
-│  ├─ PID_control.ino  # Algoritmo PID para estabilización invertida
-│  └─ Audio.ino        # Generación de sirena y reproducción de melodías
-├─ ESP8266/            # Firmware del ESP8266 y web UI
-│  ├─ ESP8266.ino      # Conexión WiFi, WebSockets, parseo Serial y broadcast
-│  ├─ index_html.h     # Página HTML/CSS/JS incrustada para la UI web
-│  ├─ audio.h          # Recursos de audio en PROGMEM
-│  └─ README.md        # Documentación de alto nivel (este archivo)
-```
-
 ## Descripción general
 
 ### Arduino Uno/Nano:
@@ -63,6 +46,24 @@ Este repositorio contiene el código fuente y documentación de un robot inspira
 - Telemetría MPU: 20ms de período
 - WebSocket: 20ms de actualización
 - MAX_RPM configurable: 30 RPM por defecto
+
+
+## Estructura de archivos
+
+```
+├─ Arduino/            # Código de control en Arduino
+│  ├─ Main.ino         # Lógica de inicialización y bucle principal
+│  ├─ Param.ino        # Definición de pines y parámetros globales
+│  ├─ mpu_module.ino   # Lectura, filtrado y telemetría de MPU6050
+│  ├─ dual_stepper_control.ino  # Control de dos motores NEMA17
+│  ├─ PID_control.ino  # Algoritmo PID para estabilización invertida
+│  └─ Audio.ino        # Generación de sirena y reproducción de melodías
+├─ ESP8266/            # Firmware del ESP8266 y web UI
+│  ├─ ESP8266.ino      # Conexión WiFi, WebSockets, parseo Serial y broadcast
+│  ├─ index_html.h     # Página HTML/CSS/JS incrustada para la UI web
+│  ├─ audio.h          # Recursos de audio en PROGMEM
+│  └─ README.md        # Documentación de alto nivel (este archivo)
+```
 
 ## Flujo de funcionamiento
 
@@ -149,28 +150,6 @@ const char* password = "12345678";
 ### 3. Flashea primero el firmware de Arduino, luego el del ESP8266
 
 ### 4. Abre el navegador en la IP mostrada por el ESP en el monitor serie
-
-## Protocolos de comunicación
-
-### Arduino → ESP8266:
-- Baudios: 115200
-- Formato: `[TIPO,dato1,dato2,...]`
-- Terminador: `\n`
-
-### ESP8266 → Arduino:
-- Formato: `[COMANDO,param1,param2,...]`
-- Ejemplos:
-  - `[S,90,90]` - Servos a 90°
-  - `[M,100,1000,1]` - Motor 1 a 100 por 1000ms
-  - `[DC,0.5]` - Motor DC al 50%
-  - `[PIDT,0,1.0,0.1,0.05]` - PID tuning
-  - `[JOY_L:0.5,0.2]` - Joystick izquierdo
-  - `[MRPM,25]` - RPM máximo a 25
-
-### WebSocket (Cliente ↔ ESP8266):
-- Puerto: 81
-- Formato: JSON
-- Frecuencia: 50Hz (20ms)
 
 ## Optimizaciones implementadas
 
