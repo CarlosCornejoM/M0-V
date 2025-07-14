@@ -53,10 +53,10 @@ Este repositorio contiene el código fuente y documentación de un robot inspira
 ├─ Arduino/            # Código de control en Arduino
 │  ├─ Main.ino         # Lógica de inicialización y bucle principal
 │  ├─ Param.ino        # Definición de pines y parámetros globales
-│  ├─ mpu_module.ino   # Lectura, filtrado y telemetría de MPU6050
-│  ├─ dual_stepper_control.ino  # Control de dos motores NEMA17
-│  ├─ PID_control.ino  # Algoritmo PID para estabilización invertida
-│  └─ Audio.ino        # Generación de sirena y reproducción de melodías
+│  ├─ MPU.ino          # Lectura, filtrado y telemetría de MPU6050
+│  ├─ Motors.ino       # Control de dos motores NEMA17
+│  ├─ PID.ino         # Algoritmo PID para estabilización invertida
+
 ├─ ESP8266/            # Firmware del ESP8266 y web UI
 │  ├─ ESP8266.ino      # Conexión WiFi, WebSockets, parseo Serial y broadcast
 │  ├─ index_html.h     # Página HTML/CSS/JS incrustada para la UI web
