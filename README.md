@@ -47,22 +47,6 @@ Este repositorio contiene el código fuente y documentación de un robot inspira
 - MAX_RPM configurable: 30 RPM por defecto
 
 
-## Estructura de archivos
-
-```
-├─ Arduino/            # Código de control en Arduino
-│  ├─ Main.ino         # Lógica de inicialización y bucle principal
-│  ├─ Param.ino        # Definición de pines y parámetros globales
-│  ├─ MPU.ino          # Lectura, filtrado y telemetría de MPU6050
-│  ├─ Motors.ino       # Control de dos motores NEMA17
-│  ├─ PID.ino         # Algoritmo PID para estabilización invertida
-
-├─ ESP8266/            # Firmware del ESP8266 y web UI
-│  ├─ ESP8266.ino      # Conexión WiFi, WebSockets, parseo Serial y broadcast
-│  ├─ index_html.h     # Página HTML/CSS/JS incrustada para la UI web
-│  ├─ audio.h          # Recursos de audio en PROGMEM
-│  └─ README.md        # Documentación de alto nivel (este archivo)
-```
 
 ## Flujo de funcionamiento
 
