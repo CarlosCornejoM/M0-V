@@ -30,8 +30,7 @@ Este repositorio contiene el código fuente y documentación de un robot inspira
 ## Especificaciones técnicas
 
 ### Hardware requerido:
-- Arduino Uno/Nano
-- ESP8266 (NodeMCU/Wemos D1 Mini)
+- Arduino Uno + ESP8266
 - MPU6050 (giroscopio/acelerómetro)
 - 2x Motor NEMA17 con drivers DRV8825
 - 2x Servomotor SG90
